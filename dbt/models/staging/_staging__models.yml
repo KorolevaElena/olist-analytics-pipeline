@@ -114,3 +114,26 @@ models:
           - accepted_values:
               values: [1, 2, 3, 4, 5]
               quote: false
+
+  - name: stg_products
+    description: "Staging layer for products. Provides physical characteristics of each product. KNOWN DATA QUALITY ISSUE: some products have null product_category_name (orphan products, not discoverable by customers via category browsing) or null product_name_length (likely a broken listing). These rows are kept here for referential integrity with order_items, but should be excluded from customer-facing / sales analysis in the marts layer."
+    columns:
+      - name: product_id
+        description: "Unique product identifier, primary key"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: product_category_name
+        description: "Product category. NULL indicates an orphan product not browsable by category -- known data quality issue, see model description"
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: product_name_length
+        description: "Length of product title. NULL likely indicates a broken/incomplete listing -- known data quality issue, see model description"
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
