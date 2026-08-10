@@ -1,0 +1,116 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Staging layer for Olist orders -- 1:1 mapping of raw.orders with explicit typing"
+    columns:
+      - name: order_id
+        description: "Unique order identifier, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "ID of the customer who placed the order"
+        data_tests:
+          - not_null
+      - name: order_status
+        description: "Order status"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'unavailable',
+                       'invoiced', 'processing', 'created', 'approved']
+
+  - name: stg_customers
+    description: "Staging layer for customers. customer_id is unique per order, customer_unique_id -- per person"
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_unique_id
+        description: "Real unique customer (can appear multiple times for repeat purchases)"
+        data_tests:
+          - not_null
+      - name: customer_state
+        data_tests:
+          - not_null
+
+  - name: stg_order_items
+    description: "Staging layer for order line items. order_id is not unique (one order -- many items)"
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: product_id
+        data_tests:
+          - not_null
+      - name: price
+        description: "Item price, must be positive"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
+
+  - name: stg_order_payments
+    description: "Staging layer for order payments. order_id is not unique (multiple payment methods per order)"
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - order_id
+            - payment_sequential
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: payment_type
+        description: "Payment method"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+      - name: payment_value
+        description: "Payment amount, must be positive or 0"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: payment_installments
+        description: "Number of installments, must be positive or 0"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+  - name: stg_order_reviews
+    description: "Staging layer for order reviews. review_id is not guaranteed unique -- some reviews appear twice with identical content but different order_id, likely a data export issue upstream. Both rows are kept since the correct order_id cannot be determined."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - order_id
+            - review_id
+      - dbt_utils.expression_is_true:
+          expression: "review_answer_timestamp >= review_creation_date"
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+      - name: review_score
+        description: "Order evaluation by customer, 1 to 5"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false

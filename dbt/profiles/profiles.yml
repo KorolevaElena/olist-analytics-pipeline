@@ -1,0 +1,12 @@
+olist_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: olist-analytics-pipeline
+      dataset: staging
+      keyfile: /secrets/airflow-olist-sa-key.json
+      location: us-central1
+      threads: 4
+      timeout_seconds: 300

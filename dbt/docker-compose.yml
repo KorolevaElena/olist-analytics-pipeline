@@ -1,0 +1,8 @@
+services:
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-bigquery:1.8.latest
+    volumes:
+      - .:/usr/app          # весь наш dbt-проект виден внутри контейнера
+      - ../airflow/secrets:/secrets  # переиспользуем тот же service account ключ
+    working_dir: /usr/app
+    entrypoint: dbt
