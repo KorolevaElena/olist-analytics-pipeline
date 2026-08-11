@@ -134,9 +134,14 @@ models:
           - not_null
 
       - name: product_category_name
-        description: "Product category. NULL indicates an orphan product not browsable by category -- known data quality issue, see model description"
+        description: "Product category (Portuguese). NULL indicates an orphan product not browsable by category -- known data quality issue, see model description. Also checked against stg_category_translation to ensure every category has an English translation available."
         data_tests:
           - not_null:
+              config:
+                severity: warn
+          - relationships:
+              to: ref('stg_category_translation')
+              field: product_category_name
               config:
                 severity: warn
 
@@ -195,3 +200,15 @@ models:
               min_value: -180
               max_value: 180
               inclusive: true
+
+  - name: stg_category_translation
+    description: "Staging layer for product category name translations (Portuguese to English). Source CSV has no header row -- generic column names were renamed to meaningful ones in the model SQL."
+    columns:
+      - name: product_category_name
+        description: "Category name in Portuguese, used as the join key from stg_products"
+        data_tests:
+          - not_null
+      - name: product_category_name_english
+        description: "Category name in English"
+        data_tests:
+          - not_null
