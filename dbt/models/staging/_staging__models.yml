@@ -35,6 +35,15 @@ models:
       - name: customer_state
         data_tests:
           - not_null
+      - name: customer_zip_code_prefix
+        description: "ZIP code prefix used to locate the customer geographically. KNOWN DATA QUALITY ISSUE: ~0.3% of customers have a zip prefix not found in stg_geolocation (likely rare/incomplete postal codes). In a real-world scenario, this reference table would be enriched with missing zip codes; treated as warn since it doesn't affect non-geographic metrics."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_geolocation')
+              field: geolocation_zip_code_prefix
+              config:
+                severity: warn
 
   - name: stg_order_items
     description: "Staging layer for order line items. order_id is not unique (one order -- many items)"
@@ -137,3 +146,52 @@ models:
           - not_null:
               config:
                 severity: warn
+
+  - name: stg_sellers
+    description: "Staging layer for sellers. seller_id is unique primary key, remaining columns describe seller address"
+    columns:
+      - name: seller_id
+        description: "Unique seller identifier, primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: seller_zip_code_prefix
+        description: "ZIP code prefix used to locate the seller geographically. KNOWN DATA QUALITY ISSUE: a small number of sellers have a zip prefix not found in stg_geolocation. See stg_customers for the same known limitation."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_geolocation')
+              field: geolocation_zip_code_prefix
+              config:
+                severity: warn
+
+  - name: stg_geolocation
+    description: "Staging layer for Brazilian geolocation data (zip code prefix to lat/lng mapping). KNOWN DATA QUALITY ISSUE: the combination of zip_code_prefix, lat and lng contains duplicate rows in the source data (~13% of rows). These are treated as non-critical (warn) since they don't distort individual coordinate values, only inflate row counts if not deduplicated downstream."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - geolocation_zip_code_prefix
+            - geolocation_lat
+            - geolocation_lng
+          config:
+            severity: warn
+    columns:
+      - name: geolocation_zip_code_prefix
+        data_tests:
+          - not_null
+      - name: geolocation_lat
+        description: "Latitude, must be within valid geographic bounds"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -90
+              max_value: 90
+              inclusive: true
+      - name: geolocation_lng
+        description: "Longitude, must be within valid geographic bounds"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -180
+              max_value: 180
+              inclusive: true
