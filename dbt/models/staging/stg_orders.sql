@@ -1,5 +1,4 @@
--- Staging-модель: 1:1 отражение raw.orders с явной типизацией
--- и понятными именами колонок. Никаких джойнов и агрегаций здесь.
+-- Staging-модель: orders with customers and delivery info
 
 select
     order_id,

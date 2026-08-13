@@ -1,0 +1,209 @@
+models:
+  - name: dim_dates
+    description: "Calendar for analysis. One line is one day"
+    columns:
+      - name: date_day
+        description: "primary key"
+        tests:
+          - unique
+          - not_null
+      - name: year
+        tests:
+          - not_null
+      - name: is_weekend
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              quote: false
+
+  - name: dim_customers
+    description: "customer_unique_id is one line. Geolocation based on last purchase."
+    data_tests:
+      - dbt_utils.expression_is_true:
+          expression: "last_order_date >= first_order_date"
+    columns:
+      - name: customer_key
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_unique_id
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_state
+        data_tests:
+          - not_null
+      - name: first_order_date
+        data_tests:
+          - not_null
+      - name: last_order_date
+        data_tests:
+          - not_null
+
+  - name: dim_products
+    description: "product_id is one line. Orphans are present."
+    columns:
+      - name: product_key
+        data_tests:
+          - unique
+          - not_null
+      - name: product_id
+        data_tests:
+          - unique
+          - not_null
+      - name: product_category_name_english
+        description: "Product category name in english to spot orphans"
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+  - name: dim_sellers
+    description: "seller_id is one line"
+    columns:
+      - name: seller_key
+        data_tests:
+          - unique
+          - not_null
+      - name: seller_id
+        data_tests:
+          - unique
+          - not_null
+      - name: seller_state
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
+
+  - name: fct_order_items
+    description: "Grain: one line is one ordered product (order_id + order_item_id)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - order_id
+            - order_item_id
+    columns:
+      - name: order_item_key
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_key
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: product_key
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: seller_key
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: price
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: fct_orders
+    description: "Grain: one line is one order"
+    columns:
+      - name: order_key
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_key
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: total_value
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: approval_time_hours
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              config:
+                severity: error
+      - name: dispatch_time_hours
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              config:
+                severity: warn
+      - name: transit_time_hours
+        data_tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              config:
+                severity: warn
+
+  - name: fct_order_payments
+    description: "Grain: one line is one payment sequence."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - order_id
+            - payment_sequential
+    columns:
+      - name: order_payment_key
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+      - name: order_key
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: payment_value
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: payment_type
+        data_tests:
+          - not_null
+
+  - name: fct_reviews
+    description: "Grain: one line is review per one order"
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - order_id
+            - review_id
+      - dbt_utils.expression_is_true:
+          expression: "review_answer_timestamp >= review_creation_date"
+    columns:
+      - name: review_key
+        data_tests:
+          - unique
+          - not_null
+      - name: review_id
+        data_tests:
+          - not_null
+      - name: order_id
+        data_tests:
+          - not_null
+      - name: order_key
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: review_score
+        description: "Order evaluation by customer, 1 to 5"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false
+
+    

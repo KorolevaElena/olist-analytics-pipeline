@@ -17,6 +17,11 @@ clean-targets:
 models:
   olist_analytics:
     staging:
-      +materialized: view      # staging-модели — лёгкие view, не занимают место
+      +materialized: view
     marts:
-      +materialized: table     # marts — полноценные таблицы, для быстрого чтения дашбордом
+      core:
+        +materialized: table
+        +schema: marts
+      reporting:
+        +materialized: table
+        +schema: marts
