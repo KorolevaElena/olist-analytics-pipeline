@@ -1,0 +1,55 @@
+models:
+  - name: mart_executive_summary
+    description: "main kpis for executive summary"
+    columns:
+      - name: month_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
+          - unique
+      - name: retention_rate_3m
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: cancelled_rate
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: on_time_rate
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+  - name: mart_top_performers
+    description: "top sellers, products in gmv"
+    columns:
+      - name: top_performer_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: entity_type
+        description: "perfromer"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['seller', 'product', 'region']
+      - name: entity_id
+        data_tests:
+          - not_null
+      - name: rank
+        description: "ranking"
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+              quote: false

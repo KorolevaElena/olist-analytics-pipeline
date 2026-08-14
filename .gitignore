@@ -1,0 +1,12 @@
+venv/
+*.csv
+.env
+*.json
+!dbt_project.yml
+__pycache__/
+.DS_Store
+logs/
+airflow/secrets/
+dbt/target/
+dbt/dbt_packages/
+dbt/profiles/profiles.yml
