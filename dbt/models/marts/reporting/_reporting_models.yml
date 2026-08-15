@@ -43,6 +43,11 @@ models:
           - not_null
           - accepted_values:
               values: ['seller', 'product', 'region']
+      - name: direction
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['top', 'bottom']
       - name: entity_id
         data_tests:
           - not_null
@@ -53,3 +58,67 @@ models:
           - accepted_values:
               values: [1, 2, 3]
               quote: false
+
+  - name: mart_product_performance
+    description: "product info" 
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month_start
+            - category_name
+    columns:
+      - name: product_performance_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
+      - name: category_name
+        data_tests:
+          - not_null
+      - name: gmv
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: orders_count
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_catalog_quality
+    description: "catalog quality of products"
+    columns:
+      - name: product_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+
+  - name: mart_seller_performance
+    description: "seller kpis"
+    columns:
+      - name: seller_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: seller_state
+        data_tests:
+          - not_null
+      - name: orders_count
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: is_active
+        data_tests:
+          - not_null
+      - name: total_gmv
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"

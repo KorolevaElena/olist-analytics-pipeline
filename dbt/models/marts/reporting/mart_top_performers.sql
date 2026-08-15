@@ -151,15 +151,29 @@ ranked as (
         row_number() over (
             partition by entity_type, period_type
             order by gmv desc
-        ) as rank
+        ) as rank,
+        'top' as direction
+
+    from unioned
+
+    union all
+
+    select
+        *,
+        row_number() over (
+            partition by entity_type, period_type
+            order by gmv asc
+        ) as rank,
+        'bottom' as direction
 
     from unioned
 )
 
 select
-    {{ dbt_utils.generate_surrogate_key(['entity_type', 'period_type', 'entity_id']) }} as top_performer_key,
+    {{ dbt_utils.generate_surrogate_key(['entity_type', 'period_type', 'direction', 'entity_id']) }} as top_performer_key,
     entity_type,
     period_type,
+    direction,
     entity_id,
     entity_name,
     round(gmv, 2) as gmv,
