@@ -122,3 +122,32 @@ models:
           - not_null
           - dbt_utils.expression_is_true:
               expression: ">= 0"
+
+  - name: mart_customer_analysis
+    description: "customer_info"
+    columns:
+      - name: customer_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_state
+        data_tests:
+          - not_null
+      - name: customer_status
+        data_tests:
+          - not_null
+
+
+  - name: mart_payment_preferences
+    description: "client payments stats"
+    columns:
+      - name: payment_pref_key
+        description: "primary key"
+        data_tests:
+          - unique
+          - not_null
+      - name: payment_type
+        data_tests:
+          - not_null
+      
